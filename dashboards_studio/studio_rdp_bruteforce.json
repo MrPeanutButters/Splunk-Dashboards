@@ -1,0 +1,118 @@
+{
+  "description": "RDP Brute Force \u2014 Triage (Studio)",
+  "title": "RDP Brute Force \u2014 Triage (Studio)",
+  "visualizations": {
+    "viz1": {
+      "type": "viz.line",
+      "title": "Failed RDP Logons over Time",
+      "dataSources": [
+        "ds1"
+      ]
+    },
+    "viz2": {
+      "type": "viz.table",
+      "title": "Top Source IPs + ASN/Geo",
+      "dataSources": [
+        "ds2"
+      ]
+    },
+    "viz3": {
+      "type": "viz.table",
+      "title": "Accounts Targeted",
+      "dataSources": [
+        "ds3"
+      ]
+    }
+  },
+  "dataSources": {
+    "ds1": {
+      "type": "ds.search",
+      "options": {
+        "query": "`index_windows` `sourcetype_windows_security` EventCode=4625 (Logon_Type=10 OR LogonType=10) | bin _time span=1m | stats count as failures by _time",
+        "queryParameters": {
+          "earliest": "-24h@h",
+          "latest": "now"
+        }
+      }
+    },
+    "ds2": {
+      "type": "ds.search",
+      "options": {
+        "query": "`index_windows` `sourcetype_windows_security` EventCode=4625 (Logon_Type=10 OR LogonType=10) | stats count as failures by Source_Network_Address | sort - failures | head 10 | lookup asn_lookup ip as Source_Network_Address OUTPUT asn asn_org country city",
+        "queryParameters": {
+          "earliest": "-24h@h",
+          "latest": "now"
+        }
+      }
+    },
+    "ds3": {
+      "type": "ds.search",
+      "options": {
+        "query": "`index_windows` `sourcetype_windows_security` EventCode=4625 (Logon_Type=10 OR LogonType=10) | stats count as failures values(Source_Network_Address) as src_ips by Account_Name | sort - failures | head 20",
+        "queryParameters": {
+          "earliest": "-24h@h",
+          "latest": "now"
+        }
+      }
+    }
+  },
+  "defaults": {
+    "visualizations:viz.line": {
+      "options": {
+        "legendDisplay": "right"
+      }
+    },
+    "visualizations:viz.column": {
+      "options": {
+        "legendDisplay": "right"
+      }
+    },
+    "visualizations:viz.table": {
+      "options": {
+        "wrap": true
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 960,
+      "display": "auto"
+    },
+    "structure": [
+      {
+        "item": "viz1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 12,
+          "h": 4
+        }
+      },
+      {
+        "item": "viz2",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 4,
+          "w": 6,
+          "h": 4
+        }
+      },
+      {
+        "item": "viz3",
+        "type": "block",
+        "position": {
+          "x": 6,
+          "y": 4,
+          "w": 6,
+          "h": 4
+        }
+      }
+    ]
+  },
+  "descriptionPlainText": "RDP Brute Force \u2014 Triage (Studio)",
+  "version": "1.0"
+}

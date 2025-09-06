@@ -1,0 +1,118 @@
+{
+  "description": "Network Threats \u2014 Suricata & Zeek (Studio)",
+  "title": "Network Threats \u2014 Suricata & Zeek (Studio)",
+  "visualizations": {
+    "viz1": {
+      "type": "viz.line",
+      "title": "Suricata Alerts over Time",
+      "dataSources": [
+        "ds1"
+      ]
+    },
+    "viz2": {
+      "type": "viz.column",
+      "title": "Top Suricata Signatures",
+      "dataSources": [
+        "ds2"
+      ]
+    },
+    "viz3": {
+      "type": "viz.table",
+      "title": "Scan Detector (Suricata/Zeek)",
+      "dataSources": [
+        "ds3"
+      ]
+    }
+  },
+  "dataSources": {
+    "ds1": {
+      "type": "ds.search",
+      "options": {
+        "query": "`index_so` `sourcetype_suricata` | bin _time span=5m | stats count by _time",
+        "queryParameters": {
+          "earliest": "-24h@h",
+          "latest": "now"
+        }
+      }
+    },
+    "ds2": {
+      "type": "ds.search",
+      "options": {
+        "query": "`index_so` `sourcetype_suricata` | stats count by signature | sort - count | head 15",
+        "queryParameters": {
+          "earliest": "-24h@h",
+          "latest": "now"
+        }
+      }
+    },
+    "ds3": {
+      "type": "ds.search",
+      "options": {
+        "query": "(`index_so` `sourcetype_suricata` signature=\"*SCAN*\" OR signature=\"*Portscan*\") OR (`index_so` `sourcetype_zeek_conn`) | eval is_scan=if(signature!=\"\" OR (sourcetype=\"zeek:conn\" AND bytes_out>0 AND bytes_in=0), 1, 0) | where is_scan=1 | stats count by src_ip, dest_ip, signature | sort - count | head 20",
+        "queryParameters": {
+          "earliest": "-24h@h",
+          "latest": "now"
+        }
+      }
+    }
+  },
+  "defaults": {
+    "visualizations:viz.line": {
+      "options": {
+        "legendDisplay": "right"
+      }
+    },
+    "visualizations:viz.column": {
+      "options": {
+        "legendDisplay": "right"
+      }
+    },
+    "visualizations:viz.table": {
+      "options": {
+        "wrap": true
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 960,
+      "display": "auto"
+    },
+    "structure": [
+      {
+        "item": "viz1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 12,
+          "h": 4
+        }
+      },
+      {
+        "item": "viz2",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 4,
+          "w": 6,
+          "h": 4
+        }
+      },
+      {
+        "item": "viz3",
+        "type": "block",
+        "position": {
+          "x": 6,
+          "y": 4,
+          "w": 6,
+          "h": 4
+        }
+      }
+    ]
+  },
+  "descriptionPlainText": "Network Threats \u2014 Suricata & Zeek (Studio)",
+  "version": "1.0"
+}

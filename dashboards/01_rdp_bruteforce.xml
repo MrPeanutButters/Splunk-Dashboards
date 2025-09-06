@@ -1,0 +1,96 @@
+<dashboard>
+  <label>RDP Brute Force — Triage</label>
+  <description>Triages failed RDP logons (EventCode=4625, LogonType=10), highlights bursts, offenders, and impacted hosts/accounts.</description>
+  <row>
+    <panel>
+      <title>Failed RDP Logons over Time (1m)</title>
+      <chart>
+        <search>
+          <query>
+            <![CDATA[
+index=wineventlog (sourcetype=XmlWinEventLog:Security OR sourcetype=WinEventLog:Security) EventCode=4625
+| eval isRDP=if(Logon_Type==10 OR LogonType==10, 1, 0)
+| where isRDP=1
+| bin _time span=1m
+| stats count as failures by _time
+            ]]>
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">line</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Top Source IPs (last 24h)</title>
+      <chart>
+        <search>
+          <query>
+            <![CDATA[
+index=wineventlog (sourcetype=XmlWinEventLog:Security OR sourcetype=WinEventLog:Security) EventCode=4625 (Logon_Type=10 OR LogonType=10)
+| stats count as failures by Source_Network_Address
+| sort - failures | head 10
+            ]]>
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Accounts Targeted</title>
+      <table>
+        <search>
+          <query>
+            <![CDATA[
+index=wineventlog (sourcetype=XmlWinEventLog:Security OR sourcetype=WinEventLog:Security) EventCode=4625 (Logon_Type=10 OR LogonType=10)
+| stats count as failures values(Source_Network_Address) as src_ips by Account_Name
+| sort - failures | head 20
+            ]]>
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </table>
+    </panel>
+    <panel>
+      <title>Hosts Under Attack</title>
+      <table>
+        <search>
+          <query>
+            <![CDATA[
+index=wineventlog (sourcetype=XmlWinEventLog:Security OR sourcetype=WinEventLog:Security) EventCode=4625 (Logon_Type=10 OR LogonType=10)
+| stats count as failures values(Source_Network_Address) as src_ips by host
+| sort - failures | head 20
+            ]]>
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Burst Detector (>=10 fails in 1 minute)</title>
+      <table>
+        <search>
+          <query>
+            <![CDATA[
+index=wineventlog (sourcetype=XmlWinEventLog:Security OR sourcetype=WinEventLog:Security) EventCode=4625 (Logon_Type=10 OR LogonType=10)
+| bin _time span=1m
+| stats count as failures values(Source_Network_Address) as src_ips values(Account_Name) as accounts by _time, host
+| where failures >= 10
+| sort - _time
+            ]]>
+          </query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+</dashboard>
